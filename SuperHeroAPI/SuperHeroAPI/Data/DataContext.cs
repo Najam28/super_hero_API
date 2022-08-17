@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using SuperHeroAPI.Models;
 
 namespace SuperHeroAPI.Data
 {
@@ -25,7 +26,7 @@ namespace SuperHeroAPI.Data
         }
 
         public DbSet<SuperHero> SuperHeroes { get; set; }
-
+        public DbSet<Student> students { get; set; }
 
     }
 }
