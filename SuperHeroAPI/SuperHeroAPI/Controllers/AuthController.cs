@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using SuperHeroAPI.Services.UserService;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -15,9 +17,23 @@ namespace SuperHeroAPI.Controllers
         
         public static User user = new User();
         private readonly IConfiguration configuration;
-        public AuthController(IConfiguration configuration)
+        private readonly IUserService userService;
+
+        public AuthController(IConfiguration configuration, IUserService userService)
         {
             this.configuration = configuration;
+            this.userService = userService;
+        }
+
+        [HttpGet, Authorize]
+        public ActionResult<string> GetMe()
+        {
+            var service = userService.GetMyName();
+            return Ok(service);
+            //var userName = User?.Identity?.Name;
+            //var claimName = User.FindFirstValue(ClaimTypes.Name);
+            //var role = User.FindFirstValue(ClaimTypes.Role);
+            //return Ok(new { userName, claimName, role });
         }
 
         [HttpPost ("register")]
