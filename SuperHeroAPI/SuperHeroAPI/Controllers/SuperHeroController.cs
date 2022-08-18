@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SuperHeroAPI.Data;
 using System.Xml.Linq;
@@ -22,7 +23,7 @@ namespace SuperHeroAPI.Controllers
             
             return Ok(await context.SuperHeroes.ToListAsync());
         }
-
+        //With Authorize checking
         [HttpGet("{id}")]
         public async Task<ActionResult<SuperHero>> Getid(int id)
         {
@@ -37,7 +38,7 @@ namespace SuperHeroAPI.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost, Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<SuperHero>>> Post(SuperHero dbhero)
         {
             context.SuperHeroes.Add(dbhero);
@@ -57,7 +58,7 @@ namespace SuperHeroAPI.Controllers
             dbhero.LastName = request_hero.LastName;
             dbhero.Place = request_hero.Place;
             await context.SaveChangesAsync();
-                    return Ok(await context.SuperHeroes.ToListAsync());
+                    return Ok(context.SuperHeroes.ToListAsync());
         }
 
         [HttpDelete]

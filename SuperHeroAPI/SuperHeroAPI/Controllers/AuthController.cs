@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace SuperHeroAPI.Controllers
 {
@@ -22,16 +23,23 @@ namespace SuperHeroAPI.Controllers
         [HttpPost ("register")]
         public async Task<ActionResult<User>> Register (UserDto request)
         {
-            CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
+            CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt); //
             user.UserName = request.UserName;
             user.PasswordHash = passwordHash;
             user.PasswordSalt = passwordSalt;
+
+            // send api call to database
+
+            //create user object
+
+            //call the database
             return Ok(user);
         }
 
         [HttpPut("login")]
         public async Task<ActionResult<string>> Login(UserDto request)
         {
+            //get user by name -- call to database
             if (user.UserName != request.UserName)
             {
                 return BadRequest("User not Found");
@@ -50,11 +58,12 @@ namespace SuperHeroAPI.Controllers
         }
         private string CreateToken(User user)
         {
-            List<Claim> claims = new List<Claim>();
+            List<Claim> claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.UserName);
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.Role, "Admin")
             };
-            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(configuration.GetSection("AppSettings:Token").Value));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration.GetSection("AppSettings:Token").Value));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
             var token = new JwtSecurityToken(
                 claims: claims,
@@ -69,14 +78,14 @@ namespace SuperHeroAPI.Controllers
             using (var hmac = new HMACSHA512())
             {
                 passwordSalt = hmac.Key;
-                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
             }
         }
         private bool VerifyPassword(string password, byte[] passwordHash, byte[] passwordSalt)
         {
             using (var hmac = new HMACSHA512(passwordSalt))
             {
-                var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
                 return computedHash.SequenceEqual(passwordHash);
             }
         }

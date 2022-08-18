@@ -28,7 +28,7 @@ namespace SuperHeroAPI.Data
         public DbSet<SuperHero> SuperHeroes { get; set; }
         public DbSet<Student> students { get; set; }
 
-        public DbSet<User> users { get; set; }
+        //public DbSet<User> users { get; set; }
 
     }
 }
