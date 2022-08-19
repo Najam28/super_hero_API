@@ -36,7 +36,7 @@ namespace SuperHeroAPI.Controllers
             //return Ok(new { userName, claimName, role });
         }
 
-        [HttpPost ("register")]
+        [HttpPost("register")]
         public async Task<ActionResult<User>> Register (UserDto request)
         {
             CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt); //
@@ -65,6 +65,8 @@ namespace SuperHeroAPI.Controllers
                 return BadRequest("Wrong Password");
             }
             var authtoken = CreateToken(user);
+            var reftoken = GenerateRefreshToken();
+            SetRefreshToken(reftoken);
             return Ok(authtoken);
             //if (user.UserName == request.UserName)
             //    return Ok("Great Work");
@@ -72,6 +74,49 @@ namespace SuperHeroAPI.Controllers
             //    return BadRequest("Wrong Password");
             //return BadRequest("User not found");
         }
+
+        [HttpPost("refresh-token")]
+        public async Task<ActionResult<string>> RefreshToken()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+            if(!user.RefreshToken.Equals(refreshToken))
+            {
+                return Unauthorized("Invalid Token");
+            }
+            else if(user.TokenCreated < DateTime.Now)
+            {
+                return Unauthorized("Token Expire");
+            }
+            string token = CreateToken(user);
+            var newRefreshToken = GenerateRefreshToken();
+            SetRefreshToken(newRefreshToken);
+            return Ok(token);
+        }
+
+        private void SetRefreshToken(RefreshToken newRefreshToken)
+        {
+            var cookieoptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = newRefreshToken.ExpireDate,
+            };
+            Response.Cookies.Append("refreshToken", newRefreshToken.Token, cookieoptions);
+            user.RefreshToken = newRefreshToken.Token;
+            user.TokenCreated = newRefreshToken.CreatedDate;
+            user.TokenCreated = newRefreshToken.ExpireDate;
+        }
+
+        private RefreshToken GenerateRefreshToken()
+        {
+            var refreshToken = new RefreshToken
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                CreatedDate = DateTime.UtcNow,
+                ExpireDate = DateTime.Now.AddDays(7),
+            };
+            return refreshToken;
+        }
+
         private string CreateToken(User user)
         {
             List<Claim> claims = new List<Claim>
