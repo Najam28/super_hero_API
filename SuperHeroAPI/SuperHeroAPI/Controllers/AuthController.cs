@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using SuperHeroAPI.Data;
 using SuperHeroAPI.Services.UserService;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -14,13 +16,15 @@ namespace SuperHeroAPI.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        
+        private readonly DataContext context;
+
         public static User user = new User();
         private readonly IConfiguration configuration;
         private readonly IUserService userService;
 
-        public AuthController(IConfiguration configuration, IUserService userService)
+        public AuthController(IConfiguration configuration, IUserService userService,DataContext _context)
         {
+            this.context = _context;
             this.configuration = configuration;
             this.userService = userService;
         }
@@ -39,40 +43,41 @@ namespace SuperHeroAPI.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register (UserDto request)
         {
+            User _user = new User();
+
             CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt); //
-            user.UserName = request.UserName;
-            user.PasswordHash = passwordHash;
-            user.PasswordSalt = passwordSalt;
+            _user.UserName = request.UserName;
+            _user.PasswordHash = passwordHash;
+            _user.PasswordSalt = passwordSalt;
 
+            context.users.Add(_user);
+            await context.SaveChangesAsync();
             // send api call to database
-
             //create user object
-
             //call the database
-            return Ok(user);
+            return Ok(await context.users.ToListAsync());
         }
 
-        [HttpPut("login")]
+        [HttpPost("login")]
         public async Task<ActionResult<string>> Login(UserDto request)
         {
+            var _user =  context.users.Where(n => n.UserName == request.UserName).FirstOrDefault();
+
+
             //get user by name -- call to database
-            if (user.UserName != request.UserName)
+            if (_user.UserName != request.UserName)
             {
                 return BadRequest("User not Found");
             }
-            if (!VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
+            if (!VerifyPassword(request.Password, _user.PasswordHash, _user.PasswordSalt))
             {
                 return BadRequest("Wrong Password");
             }
-            var authtoken = CreateToken(user);
-            var reftoken = GenerateRefreshToken();
-            SetRefreshToken(reftoken);
-            return Ok(authtoken);
-            //if (user.UserName == request.UserName)
-            //    return Ok("Great Work");
-            //if (!VerifyPassword(request.Password, user.PasswordSalt, user.PasswordHash))
-            //    return BadRequest("Wrong Password");
-            //return BadRequest("User not found");
+            var autToken = CreateToken(_user);
+            var refreshToken = GenerateRefreshToken();
+            SetRefreshToken(refreshToken);
+            context.users.Add(_user);
+            return Ok(_user);
         }
 
         [HttpPost("refresh-token")]
@@ -152,3 +157,5 @@ namespace SuperHeroAPI.Controllers
         }
     }
 }
+
+
