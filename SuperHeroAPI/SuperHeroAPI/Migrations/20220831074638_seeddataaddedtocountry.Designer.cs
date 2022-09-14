@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SuperHeroAPI.Data;
 
@@ -11,9 +12,10 @@ using SuperHeroAPI.Data;
 namespace SuperHeroAPI.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20220831074638_seeddataaddedtocountry")]
+    partial class seeddataaddedtocountry
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,7 +55,7 @@ namespace SuperHeroAPI.Migrations
                         {
                             CountryId = 2,
                             CountryName = "UAE",
-                            IOSCode = "ARE"
+                            IOSCode = "UAE"
                         });
                 });
 
@@ -116,8 +118,9 @@ namespace SuperHeroAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"), 1L, 1);
 
-                    b.Property<int?>("CountryId")
-                        .HasColumnType("int");
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -151,18 +154,7 @@ namespace SuperHeroAPI.Migrations
 
                     b.HasKey("UserId");
 
-                    b.HasIndex("CountryId");
-
                     b.ToTable("users");
-                });
-
-            modelBuilder.Entity("SuperHeroAPI.User", b =>
-                {
-                    b.HasOne("SuperHeroAPI.Countries", "Countries")
-                        .WithMany()
-                        .HasForeignKey("CountryId");
-
-                    b.Navigation("Countries");
                 });
 #pragma warning restore 612, 618
         }

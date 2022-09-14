@@ -58,7 +58,7 @@ namespace SuperHeroAPI.Controllers
         {
             var dbstudent = await std_Context.students.FindAsync(id);
             if (dbstudent == null)
-                return BadRequest("Stuent not removed");
+                return BadRequest("Student not removed");
             std_Context.students.Remove(dbstudent);
             await std_Context.SaveChangesAsync();
             return Ok(await std_Context.students.ToListAsync());

@@ -18,7 +18,7 @@ namespace SuperHeroAPI.Migrations
                     UserName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PasswordHash = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
                     PasswordSalt = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
-                    RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TokenCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TokenExpire = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },

@@ -10,6 +10,7 @@ namespace SuperHeroAPI.Services.UserService
         {
             this.httpContextAccessor = httpContextAccessor;
         }
+
         public string GetMyName()
         {
             var result = string.Empty;
@@ -19,5 +20,6 @@ namespace SuperHeroAPI.Services.UserService
             }
             return result;
         }
+
     }
 }

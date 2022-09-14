@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -34,23 +37,35 @@ namespace SuperHeroAPI.Controllers
         {
             var service = userService.GetMyName();
             return Ok(service);
-            //var userName = User?.Identity?.Name;
-            //var claimName = User.FindFirstValue(ClaimTypes.Name);
-            //var role = User.FindFirstValue(ClaimTypes.Role);
-            //return Ok(new { userName, claimName, role });
+        }
+        [HttpGet("allusers")]
+        public async Task<ActionResult<User>> GetAllUser()
+        {
+            return Ok(await context.users.ToListAsync());
         }
 
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register (UserDto request)
         {
             User _user = new User();
 
-            CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt); //
+            CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
             _user.UserName = request.UserName;
             _user.PasswordHash = passwordHash;
             _user.PasswordSalt = passwordSalt;
+            _user.Email = request.Email;
+            _user.CountryId = request.CountryId;
+            _user.Gender = request.Gender;
+            _user.RefreshToken = Request.Cookies["refreshToken"];
 
-            context.users.Add(_user);
+            if(_user.RefreshToken == null)
+            {
+                RefreshToken rf = GenerateRefreshToken();
+                _user.RefreshToken =Convert.ToString(rf.Token);
+            }
+
+                context.users.Add(_user);
             await context.SaveChangesAsync();
             // send api call to database
             //create user object
@@ -58,14 +73,14 @@ namespace SuperHeroAPI.Controllers
             return Ok(await context.users.ToListAsync());
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login(UserDto request)
         {
             var _user =  context.users.Where(n => n.UserName == request.UserName).FirstOrDefault();
 
-
             //get user by name -- call to database
-            if (_user.UserName != request.UserName)
+            if (_user ==null ||  _user.UserName != request.UserName)
             {
                 return BadRequest("User not Found");
             }
@@ -76,15 +91,26 @@ namespace SuperHeroAPI.Controllers
             var autToken = CreateToken(_user);
             var refreshToken = GenerateRefreshToken();
             SetRefreshToken(refreshToken);
-            context.users.Add(_user);
+            await context.users.AddAsync(_user);
+
+            
             return Ok(_user);
+        }
+
+        [HttpGet("logout")]
+        public async Task<IActionResult> logout()
+        {
+            Response.Cookies.Delete("refreshToken");
+
+            return Ok("Success");
+
         }
 
         [HttpPost("refresh-token")]
         public async Task<ActionResult<string>> RefreshToken()
         {
             var refreshToken = Request.Cookies["refreshToken"];
-            if(!user.RefreshToken.Equals(refreshToken))
+            if (!user.RefreshToken!.Equals(refreshToken))
             {
                 return Unauthorized("Invalid Token");
             }
@@ -95,6 +121,7 @@ namespace SuperHeroAPI.Controllers
             string token = CreateToken(user);
             var newRefreshToken = GenerateRefreshToken();
             SetRefreshToken(newRefreshToken);
+            await context.SaveChangesAsync();
             return Ok(token);
         }
 
@@ -157,5 +184,4 @@ namespace SuperHeroAPI.Controllers
         }
     }
 }
-
 
